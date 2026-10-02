@@ -83,16 +83,20 @@ jobs:
           hacking/get_bot_user.sh "ansible-documentation-bot" "Ansible Documentation Bot"
       - name: "Use a branch named ${{ inputs.pr-branch }}"
         id: branch
+        env:
+          PR_BRANCH: ${{ inputs.pr-branch }}
+          BASE_BRANCH: ${{ inputs.base-branch }}
+          GIT_COMMAND: ${{ inputs.reset-branch && 'git reset --hard' || 'git rebase' }}
         run: |
           set -x
-          if git branch -r | grep "origin/${{ inputs.pr-branch }}"; then
+          if git branch -r | grep "origin/$PR_BRANCH"; then
             echo "branch-exists=true" >> "${GITHUB_OUTPUT}"
-            git switch "${{ inputs.pr-branch }}"
-            ${{ inputs.reset-branch && 'git reset --hard' || 'git rebase' }} \
-              "${{ inputs.base-branch }}"
+            git switch "$PR_BRANCH"
+            $GIT_COMMAND \
+              "$BASE_BRANCH"
           else
             echo "branch-exists=false" >> "${GITHUB_OUTPUT}"
-            git switch -c "${{ inputs.pr-branch }}"
+            git switch -c "$PR_BRANCH"
           fi
       - name: "Run nox ${{ inputs.nox-args }}"
         env:
